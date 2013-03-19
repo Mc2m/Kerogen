@@ -1,0 +1,28 @@
+
+The first thing you need to know when creating a mod for Kite is that everything you create will be contained in packages.
+A Kite package contains everything that will be executed in the core.
+You can find an example of package in Base, which is also the package you'll rely on a lot.
+
+Here's a list of what you can find in a package:
+
+data                The data you want to load on the core or keep for yourself
+fonts               The fonts that you'll use.
+functionalities     The functionalities of a device. You can describe working process of a phone or a computer there.
+companies           The companies contains files describing the working process of companies.
+generator           The generators that you use to create the elements of Kite's world.
+gui                 The elements constituing the graphical interface.
+
+All these names are important because that's how the package importer will differenciate what file goes where.
+When creating a package, keep in mind that you can use files from any other packages.
+The Base package will be extremely useful in that matter because it will contains stuff like drop-down menus, scrollbars, base fonts,...
+
+If your package depends on another one, you'll need to create a dependency file and write the name of the packages.
+This will allow the package manager to install your package correctly on other machines.
+
+You don't need to worry about overwriting any component from other packages because Kite will choose automatically depending on user preferences.
+
+You can upload your package on one of our servers once it is ready by using the package manager in Kite.
+If you want to add a description for that package you can write a readme file on the root of your package.
+Note that your package might have a certification. Certified package will be tested by us to ensure that it is safe to use.
+To get the certification, you'll have to pay a fee.
+That certification might also get you access to more advanced option, should you require it.

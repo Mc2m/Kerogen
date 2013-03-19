@@ -1,0 +1,39 @@
+﻿TODO for v0.1
+
+- Options
+
+- Package Manager
+
+- implement interface
+	- basic animators (flash, slide(left,up,down,right),...)
+	- highlight and click pictures
+	- Render component (for 3D)
+
+- Command interpreter
+ 	- implement interface
+
+- translation support
+
+- data synchronizer
+
+- json schema tester
+
+Done for v0.1
+
+- interface basis
+	- basic shapes
+	- component id
+	- text
+	- actions
+	- color gradient
+	- decorator
+
+- Command interpreter
+	- reload("modulename") function
+	- refresh function
+	- print function
+
+- package support
+	-package loading
+	-loading order
+	-enabling/disabling

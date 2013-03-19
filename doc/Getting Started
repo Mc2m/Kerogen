@@ -1,0 +1,17 @@
+
+Hello fellow dev. In this guide you'll find everything you need to know to add your own contribution to Kite.
+This document contains a summary of the elements constituing the outer layer of Kite (You shouldn't need any access to the core).
+Also, as usual, this guide might get quickly updated because we are dev. So if you have any questions, you can poke me at mc2m@uplinklabs.net .
+
+Here's a suggestion of how you should follow the guide
+
+1 - Getting Started (you are here !)
+2 - Package
+3 - Data
+4 - functionalities
+5 - GUI
+    A - Components
+    B - Interface
+6 - Testing
+
+Enjoy !

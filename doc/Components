@@ -1,0 +1,126 @@
+
+This document contains all you need to know to create a component for a graphical interface.
+
+What's a component?
+
+A component is an object that will be displayed. It can be a picture, some text or a Shape.
+Each of these subcategories have their own specific attributes extending over some general ones.
+
+Every components constituing an interface are grouped within a json file.
+To see how to build such file, check inside the Base package in gui/interface folder.
+As you will see, each component definition is simply a dictionary of attributes.
+Here's a list and explaination of all the common attributes you can find (*attribute is mandatory):
+
+type            The type of component you want to define. It can be set to TEXT,SHAPE or PICTURE
+
+id              You can set a specific id for a component if you want to reference it easily. An undefined id will take the value of the position of that component in the file.
+*x              It defines the component topleft x value.
+*y              It defines the component topleft y value.
+width           Defines the width of the component. Mandatory for text components as well as some specific shapes.
+height          Defines the width of the component. Mandatory for text components as well as some specific shapes.
+
+alpha           Set the component transparency (default: no transparency).
+tooltip         Set the component tooltip. If you set it, its text will be displayed when the mouse is on it.
+
+hide            If you don't want you component to show directly, you can use that switch (default : false).
+fixsize         If you want to keep that component to the same size while resizing the interface, set it to true (default : false)
+
+action          Set the desired actions for a component. It can be set to KEYDOWN,KEYUP,MOUSEDOWN,MOUSEUP or MOUSEMOVE.
+function        Set the associated function for that action. Mandatory if action is set.
+data            The parameters to give to the function.
+restriction     Set some specific parameter for that action to execute (e.g. mouse clicking action only applies for left click).
+
+The last 3 attributes are to be set only if action is.
+
+KEYDOWN,MOUSEMOVE and MOUSEDOWN are not available without the proper certification to prevent wrongdoers from doing anything stupid. You will rarely need these anyway.
+KEYUP/MOUSEUP means that you just removed your finger from the key/button (this is how you can set your mouse clicking).
+
+To set the action you need to create a list []. One action means a size 1 list.
+Each action correspond to a function so if you had a list of 10 actions, you will have a list of 10 functions.
+Those functions can either be within a list of default functions or your own. Upon loading the component, the function will be fetched using the name.
+The default functions are RUNSCREEN,CLOSE,LAUNCH,MOVE,ANCHOR and RESIZE. Those wil be explained a tad later.
+
+As mention you can set the parameters to pass to a function. If you don't require any data, you can leave it blank or set it to null
+Restriction work the same as data.
+
+Default functions require specific data to work. Here's a list of each functions and their data
+
+RUNSCREEN       Run another screen in the same interface (check Onlink to understand more) - screen id.
+CLOSE           Close the interface - null.
+LAUNCH          Run a new interface - interface name.
+ANCHOR          Make the interface follow the mouse - none.
+RESIZE          Resize the interface - direction (0 for horizontal,1 vertical,2 diagonal).
+MINIMIZE        minimize the interface - none
+
+Now, there's still the properties of each type of component to describe.
+
+
+Text
+
+A text component obviously display text. as mentionned earlier, you have to set the width and the height of a text component.
+Think of it as a textbox. Make sure there is enough space to render the text otherwise it will return an error upon display.
+
+here's the attributes for that component:
+
+text            The initial text that will appear (default: empty string).
+size            The font size (default : set in options).
+typeface        The typeface you'll use (default: set in options).
+center          Should the text be centered ? (default: true).
+r,g,b           The text color (default : set in options).
+
+clear           Should the text be cleared when clicking on the textbox ? (default: false).
+bgr,bgg,bgb     Set the background color. This can be replaced by a shape (default: set in option).
+
+
+Picture
+
+A picture component is used to display images.
+If you want to control the width,height of the picture, you only have to set those attributes.
+
+*file            The name of the file you want to load from.
+
+you can only load image formatted as jpg,png,gif,bmp,pcx,tga,tif,lbm,pbm,pgm,ppm and xpm. Should be more than enough.
+
+
+Shape
+
+A shape component is used to draw a shape.
+
+*subtype        The shape type.
+r,g,b           The shape color. (default: set in option)
+
+gradient        The gradients angle. Null value means no gradient (default: None)
+ecr,ecg,ecb     The final color for the gradient. Only applies if you set the gradient (default: set in option)
+
+Each shape type has its own attribute requirements. Here's a list of the available shapes and the data to be set
+
+RECTANGLE & ELLIPSE
+    *Width,height
+    thickness       Set the thickness of the shape border. 0 means filling the shape. (default: 0)
+POLYGON
+    thickness
+    *coordlist      The coordinates of the edges of the shape
+CIRCLE
+    thickness
+    *radius         The circle radius
+ARC
+    thickness
+    *Width,height
+    *startangle     The starting angle for the arc
+    *endangle       The ending angle for the arc
+LINE
+    thickness
+    *startpos       The starting coordinates
+    *endpos         The ending coordinates
+AALINE
+    blend           If true,the shades will be be blended with existing pixel shades instead of overwriting them(default: false)
+    *startpos
+    *endpos
+LINES
+    thickness
+    *coordlist
+    *closed         If the closed argument is true an additional line segment is drawn between the first and last points
+AALINES
+    blend
+    *coordlist
+    *closed
