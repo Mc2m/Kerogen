@@ -1,0 +1,18 @@
+{
+  "insertOutput": 0, 
+  "parseRegex": "", 
+  "name": "Windows Clear .pyc", 
+  "keyboard_shortcut": "", 
+  "operateOnSelection": 0, 
+  "value": [
+    "del /S *.pyc"
+  ], 
+  "cwd": "%p../../../", 
+  "version": "1.0.11", 
+  "env": "", 
+  "doNotOpenOutputWindow": 0, 
+  "showParsedOutputList": 0, 
+  "type": "command", 
+  "parseOutput": 0, 
+  "runIn": "command-output-window"
+}

@@ -1,0 +1,24 @@
+
+This document contains all you need to know to create the schema file for the graphical interface
+
+The schema is a json file containing the information to design the interface.
+It defines the widgets as well as the interface shortcuts.
+To see examples of such file, check inside the Base package in gui/interface folder.
+
+The schema is as follow:
+
+{
+    "widgets": [list of widgets],
+    "shortcuts": [list of shortcuts]
+}
+
+Widget description is available in the 5.2.1 Widget part of this guide.
+
+The shortcuts are the key combinations that you will add to an interface.
+Each shortcut is a dictionary containing the following attributes:
+
+specialkeys         Used to set a list of special keys to use for the shortcut.
+                    The list can contain CTRL,SHIFT,LEFTALT and RIGHTALT.
+key                 The key used with the specialkeys to activate the shortcut.
+function            The function that will run with the shortcut.
+                    Can be taken from default functions (see Widget) or created manually.

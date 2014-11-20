@@ -1,0 +1,101 @@
+
+Resizing an interface is one of the unique aspects of Kerogen in that no games really implements it, and for a good reason.
+Many hacking simulation games lack this feature because it's complex to implement.
+This document explains the approach used to resize an interface.
+
+In the following we will always consider the resizing of x from the rightmost side.
+Resize of y from the bottom works the same way.
+For the leftmost side, resizing is like rightmost side but the interface moves.
+
+------------------
+Resizing mechanism
+------------------
+
+Let's first consider an interface composed of three resizable widgets of width 100,300,100:
+
++------------------------------------------+
+|                                          |
+|  +-------+   +-----------+  +-------+    |
+|  |       |   |           |  |       |    |
+|  |   A   |   |     B     |  |   C   |    |
+|  |       |   |           |  |       |    |
+|  +-------+   +-----------+  +-------+    |
+|                                          |
++------------------------------------------+
+
+Upon resize we want the largest widget to take the most of the resizing then followed by the smallest ones.
+In order to split up the resize, we first set a ratio on each widget.
+This makes a ratio of 1,3,1 respectively.
+
+As mentionned in the widget creation part, each widgets have a list of followers and next widgets.
+The followers will be the widgets that follows the current one has it is being resized. So resizing B should make C move.
+The next parameter is used in two ways. The first is to set how the resize should proceed and where it should start.
+If a widget is resizable but has no widget that should be resized before it, then it will resize first.
+In order to respect the order from largest to lowest, we assume that the next value of B is C, next value of C is A
+and next value of A is null. The process will then start with B.
+
+Let's assume that the resize reduce the size of the interface by 57. The first idea would be to loop through the widgets
+until the resize factor has been distributed respectively to each ratio. However there is a faster way.
+
+We first precompute a sum of the ratio (during creation). This makes 5 here.
+The sum is actually telling us how much resize is consumed at each loop.
+We compute the division of the resize factor by that sum and the mod of those two.
+Knowing that we resize by 57, The division gives 11 and the mod gives 2.
+The division is the number of complete loop needed for resizing and the mod is the extra to put in.
+
+For each widget we will have a resize of ratio*division + min(ratio,mod).
+That minimum is needed because we can't put more than the ratio from the extra.
+If mod was 4, we would put an extra 3 in B and 1 in C.
+Of course for each widget, the mod will be decreased accordingly until it reaches 0. That will be the case for A and C here.
+
+Now that we have the resize factor, the widgets can be resized easily.
+Note that since we are reducing the size of the interface, the resize factor is negative.
+As for the followers, they are moved with the respective resize factor (the factor sign indicates the direction).
+
+Now let's enlarge the interface. This time we proceed backward. we first go to the end (A in this case),
+and we apply the same resize mechanism.
+
+---------------
+Second Scenario
+---------------
+
+Let's now consider an interface a little bit more complex:
+
++------------------------------------------+
+|                                          |
+|  +-------+   +-----------+  +-------+    |
+|  |       |   |     B     |  |       |    |
+|  |   A   |   +-----------+  |   C   |    |
+|  |       |                  |       |    |
+|  |       |       +----+     +-------+    |
+|  |       |       | D  |                  |
+|  +-------+       |    |     +-------+    |
+|                  +----+     |       |    |
+|                             |   E   |    |
+|                             |       |    |
+|                             +-------+    |
+|                                          |
++------------------------------------------+
+
+All the widgets are resizable.
+We have the following information for each widget:
+
+A: width = 100; next = C,D; followers = B,C,D,E
+B: width = 300; next = A; followers = C
+C: width = 200; next = Null; followers = Null
+D: width = 50; next = E; followers = C,E
+E: width = 200; next = Null; followers = Null
+
+In this case we would have to resize both B and D at the same time. with th
+
+
++------------------------------------------+
+|                                          |
+|  +-------+              +-----------+    |
+|  |       |              |     C     |    |
+|  |   A   |              +-----------+    |
+|  |       |    +------+                   |
+|  |       |    |   B  |                   |
+|  |       |    +------+                   |
+|  +-------+                               |
++------------------------------------------+

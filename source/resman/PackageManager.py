@@ -1,14 +1,10 @@
 import os
 from PackageImporter import tarfile,loadPackage
 from app.KiteError import KiteError
-from external.External import external
-from option.Option import options
 
 class PackageManager(object):
 
     def __init__(self):
-        self.pkgpath = options.getOption("package_path")
-        external.loadWorld(self.pkgpath)
         self.packages = []
 
         self.loadPackageList()
@@ -16,7 +12,8 @@ class PackageManager(object):
         #load packages
         for package in self.packages:
             if package[1]:
-                loadPackage(os.path.join(self.pkgpath,package[0]),external)
+                #TODO init packages
+                pass
 
     def loadPackageList(self):
         path = os.path.join(self.pkgpath,"packages")
@@ -97,5 +94,3 @@ class PackageManager(object):
                 SHAPE = type('shapes', (), {'RECTANGLE':1,'ELLIPSE':4,'POLYGON':2,'CIRCLE':3,'ARC':5,'LINE':6,'AALINE':8,'LINES':7,'AALINES':9})\
                 RESIZE = type('resize', (), {'HORIZONTAL':0,'VERTICAL':1,'DIAGONAL':2})"
             )
-
-pkgman = PackageManager()

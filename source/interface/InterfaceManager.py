@@ -1,105 +1,141 @@
-from game.Data import ACTIONS,FUNCTIONS,COMPONENT,RESIZE
+import app.Data as Data
+import packman.External as External
 from app.MiscUtils import positionInRectangle,findExposedAreas,overlay,intersection
-import traceback
+from interface.component.WidgetFactory import loadSchema
 from option.Option import options
-import time
-from interface.Interface import Interface
+from interface.Interfaces import GUI
+from interface.widget.Widget import Widget
+import traceback,time,os
 
 #put here the shortcuts that cannot be put in place
 InvalidShortcuts = []
 
-class KiteInterface(object):
-    """interface for Kite"""
+class InterfaceManager(object):
 
-    def __init__(self, app, renderer):
+    def __init__(self):
+        self.renderer = self.topinterface = None
 
-        self.app = app
-        self.renderer = renderer
-        renderer.setInterface(self)
-        Interface.actionmapper = self.remapActions
-
-        self.interfaces = []    #contains top interfaces (not sublayers).
-        self.base = None        #the interface that won't have any focus
-
-        self.refresh = False    #refresh the whole screen
-        self.clean = False
+        self.refresh = False            #refresh the whole screen
 
         self.shortcuts = {}
+        self.specialkeys = 0
 
-        self.focusedcomponent = None
+        self.currentinterface = None    #contains (topinterface,loadedinterface).
+        self.focusedwidget = None
 
-        self.anchorint = self.resizeint = False
+        self.anchorint = self.resizeint = None
 
-        Interface.actionmapper = self.remapActions
-
-    def runScreen(self,screenid):
+    def dirty(self,widget):
         pass
 
+    def setRenderer(self, renderer):
+        self.renderer = renderer
+        renderer.setInterface(self)
+
+    def setExternal(self,external):
+        self.external = external
+
+    def runScreen(self,files):
+        modulefile,schemafile = files
+        modulefile = os.path.join(self.currentinterface.module.__file__,modulefile)
+        schemafile = os.path.join(self.currentinterface.module.__file__,schemafile)
+
+        module,schema = self.external.loadInterface(modulefile,schemafile)
+
+        success,interfacedata = loadSchema(schema,module,self.currentinterface.notify,self.remapActions)
+        if success:
+            interfacedata.container = None
+            interface = self.currentinterface[1]
+            interface.setInterface(interfacedata)
+        else:
+            print("Invalid Interface, aborting screen change")
+
     def anchor(self, unused):
-        self.anchorint = True
+        self.anchoredint = self.currentinterface
 
     def resize(self, direction):
-        isinrightest = not self.focusedcomponent.x == 0
-        isindownest = not self.focusedcomponent.y == 0
+        isinrightest = not self.focusedwidget.x == 0
+        isindownest = not self.focusedwidget.y == 0
         self.resizeint = (direction,isinrightest,isindownest)
 
     def maximize(self, unused):
-        self.interfaces[0].maximize(self.renderer.width,self.renderer.height)
+        self.currentinterface.maximize(self.renderer.width,self.renderer.height)
 
     def minimize(self,unused):
-        self.interfaces[0].minimize()
+        self.currentinterface.minimize()
 
-    def restor(self,unused):
-        self.interfaces[0].restore()
+    def restore(self,unused):
+        self.currentinterface.restore()
 
-    def addShortcut(self,action,combo,function):
-        #combo is a tuple of button to be pressed
-        #e.g. ('ctrl','c')
-        if (action,combo) in InvalidShortcuts:
-            return
+    def addShortcut(self,specialkeys,key,action):
+        appendin = self.shortcuts
+        if specialkeys:
+            appendin = self.shortcuts.get(specialkeys)
+            if not appendin:
+                appendin = {}
+                self.shortcuts[specialkeys] = appendin
 
-        self.shortcuts[(action,combo)]=function
+        appendin[key] = action
 
-    def remapActions(self,component,interface):
-        #convert functions id/names into real functions
-        for action,functionlist in component.actionmapping.items():
-            for function in functionlist:
-                if type(function[0]) is int:
-                    if function[0] is FUNCTIONS.RUNSCREEN:
-                        component.actionmapping[action] = (self.runScreen,function[1],function[2])
-                    elif function[0] is FUNCTIONS.CLOSE:
-                        component.actionmapping[action] = (self.close,None,function[2])
-                    elif function[0] is FUNCTIONS.LAUNCH:
-                        component.actionmapping[action] = (self.addInterface,function[1],function[2])
-                    elif function[0] is FUNCTIONS.ANCHOR:
-                        component.actionmapping[action] = (self.anchor,None,function[2])
-                    elif function[0] is FUNCTIONS.RESIZE:
-                        try:
-                            dimension = eval("RESIZE.%s" % function[1])
-                            component.actionmapping[action] = (self.resize,dimension,function[2])
-                        except:
-                            print("Warning : wrong data for resizing. It can only be HORIZONTAL,VERTICAL or DIAGONAL")
-                            del component.actionmapping[action]
-                    else:
-                        print("Warning : Function id %d not recognised", function[0])
-                        del component.actionmapping[action]
-                elif type(function[0]) is str:
-                    component.actionmapping[action] = (getattr(interface, function[0]),function[1],function[2])
+    def removeShortcut(self,specialkeys,key):
+        removefrom = self.shortcuts
+        if specialkeys:
+            removefrom = self.shortcuts.get(specialkeys)
+            if not removefrom:
+                return
 
-    def addBaseInterface(self,device):
-        self.base = Interface((0,0),"BASE",device,False)
+        removefrom.pop(key,None)
 
-    def addInterface(self,(name,device)):
-        try:
-            #TODO set proper relative position
-            interface = Interface((30,30),name,device).getTop()
+    def runShortcut(self,specialkeys,key):
+        sdict = self.shortcuts
+        if specialkeys:
+            sdict = self.shortcuts.get(specialkeys)
+            if not sdict:
+                return
 
+        action = sdict.get(key)
+        if action:
+            action()
+
+    def getFunctionFromID(self,functionid):
+        #convert function id into an actual function
+        if functionid is FUNCTIONS.RUNSCREEN:
+            return self.runScreen
+        elif functionid is FUNCTIONS.CLOSE:
+            return self.close
+        elif functionid is FUNCTIONS.LAUNCH:
+            return self.addInterface
+        elif functionid is FUNCTIONS.ANCHOR:
+            return self.anchor
+        elif functionid is FUNCTIONS.RESIZE:
+            return self.resize
+        elif functionid is FUNCTIONS.MAXIMIZE:
+            return self.maximize
+        elif functionid is FUNCTIONS.MINIMIZE:
+            return self.minimize
+        elif functionid is FUNCTIONS.RESTORE:
+            return self.restore
+        else:
+            print("Warning : Function id %d not recognised" % functionid)
+            return None
+
+    def addInterface(self,files,resizable = True,focusable = True):
+        modulefile,schemafile = files
+        path = os.path.split(modulefile[0])
+        module,schema = self.external.loadInterface(modulefile,schemafile)
+
+        success,interfacedata = loadSchema(schema,self.notify)
+
+        if success:
             #no need to handle an empty interface
-            if interface.components:
-                self.interfaces.insert(0,interface)
-        except:
-            traceback.print_exc()
-            pass
+            if len(interfacedata.widgets) != 0:
+
+                #TODO set proper relative position
+                interface = GUI((30,30),name,path,module,resizable,focusable)
+                self.interfaces.insert(0,interface.getTop())
+                interface.setInterface(interfacedata)
+        else:
+            print("Failed to load interface")
 
     def focus(self, index):
         #get top interface from this layer
@@ -198,7 +234,7 @@ class KiteInterface(object):
             #redraw
             self.clean = True
 
-    def onKeyPressed(self):
+    def onKeyPressed(self,key,unicodek,mod,down):
         #TODO keys
         pass
 
@@ -223,14 +259,16 @@ class KiteInterface(object):
 
             surf = self.base.updateRender(self.clean)
             if surf:
-                self.renderer.render(surf,(self.base.x,self.base.y))
+                if self.renderer:
+                    self.renderer.render(surf,(self.base.x,self.base.y))
                 self.base.dirty = False
                 self.clean = True
 
             for ui in reversed(self.interfaces):
                 surf = ui.updateRender(self.clean)
                 if surf:
-                    self.renderer.render(surf,(ui.x,ui.y))
+                    if self.renderer:
+                        self.renderer.render(surf,(ui.x,ui.y))
                     ui.dirty = False
                     self.clean = True
 
@@ -243,3 +281,5 @@ class KiteInterface(object):
 
     def __str__(self):
         return "KiteInterface:\ninterfaces: %s\n" % (str(self.interfaces))
+
+iman = InterfaceManager()

@@ -2,9 +2,7 @@ import json
 import traceback
 from app.MiscUtils import enum
 
-SCHEMATYPES = type('schematype', (), {'DESC':1,'INTERFACE':2,'CONSOLE':3})
-
-def loadSchema(schemafile,schematype):
+def loadSchema(schemafile):
     content = None
 
     try:
@@ -15,135 +13,89 @@ def loadSchema(schemafile,schematype):
         traceback.print_exc()
         pass
 
-    if content:
-        content = test(content,schematype)
-
     return content
 
-def test(schema,schematype):
-    if schematype is SCHEMATYPES.INTERFACE:
-        schema = [x for x in schema if not testComponent(x)]
-    #TODO test decription && console
+def testSubInterface(schema):
+    #contains x,y,interfacename
+    #optionally contains schemaname,width,height
 
-    return schema
+    keep = True
 
-def testComponent(schema):
-    sctype = schema.get('type')
+    if not schema.get("x") or not schema.get("y"):
+        print("Error: missing x,y coordinates for widget.")
+        keep = False
+    elif not schema.get("interface"):
+        print("Error: missing interface name parameter.")
+        keep = False
 
-    if sctype is "DATA":
-        return testData(schema)
-    elif sctype is "DECORATOR":
-        return testDecorator(schema)
-    elif sctype is "PICTURE":
-        return testPicture(schema)
-    elif sctype is "TEXT":
-        return testText(schema)
-    elif sctype is "SHAPE":
-        return testShape(schema)
-
-    return False
-
-
-def testData(schema):
-    #optionally contains title and icon
-
-    remove = False
-
-    hastitle,hasicon = schema.get("title"),schema.get("icon")
-    if len(schema) == 0:
-        print("Warning: empty data component detected. Component removed.")
-        remove = True
-    elif not hastitle and not hasicon:
-        print("Warning: no valid data detected in data component. Component removed.")
-        remove = True
-
-    return remove
-
-def testData(schema):
-    #optionally contains title and icon
-    #can be empty
-    used = ["title","icon"]
-
-    remove = False
-
-    hastitle,hasicon = schema.get("title"),schema.get("icon")
-    if len(schema) < 2:
-        print("Error: empty data component detected.")
-        remove = True
-    elif not hastitle and not hasicon:
-        print("Error: no valid data detected in data component. Accept \"title\" and \"icon\" attributes.")
-        remove = True
-    elif len(schema) > 2 and (not hastitle or not hasicon):
-        print("Warning: invalid data detected in data component. Only %s will be used." % used)
-
-    return remove
+    return keep
 
 def testDecorator(schema):
-    #must contain name
+    #must contain interface
 
-    remove = False
-    hasname = schema.get("name")
+    keep = True
 
     if len(schema) < 2:
         print("Error: empty decorator component detected.")
-        remove = True
-    elif not hasname:
+        keep = False
+    elif not schema.get("interface"):
         print("Error: no valid data detected in decorator component. Expecting \"name\" attribute.")
-        remove = True
-    elif len(schema) > 2:
-        print("Warning: invalid data detected in data component. Only name will be used.")
+        keep = False
 
-    return remove
+    return keep
 
 def testAction(schema):
     #expect function with same size has action
     #accept restriction,data
 
-    removed = False
+    keep = True
 
     if len(schema.get("function")) != len(schema.get("action")):
         print("Error: there should be exactly 1 function for 1 action.")
-        removed = True
+        keep = False
 
-    return removed
+    return keep
 
 
 def testPicture(schema):
-    remove = False
+    keep = True
 
     if not schema.get("x") or not schema.get("y") or not schema.get("img"):
         print("Error: missing data detected in picture component."
               "Expecting \"x\",\"y\",\"img\" attributes.")
-        remove = True
+        keep = False
     elif schema.get("action"):
-        remove = testAction(schema)
+        keep = testAction(schema)
 
-    return remove
+    return keep
 
 def testText(schema):
     #expect x,y,width,height
     #background can be an image or a shape
 
-    remove = False
+    keep = True
 
     if not schema.get("x") or not schema.get("y") or not schema.get("width") or not schema.get("height"):
         print("Error: missing data detected in text component."
               "Expecting \"x\",\"y\",\"width\",\"height\" attributes.")
-        remove = True
+        keep = False
     elif schema.get("action"):
-        remove = testAction(schema)
+        keep = testAction(schema)
 
     bg = schema.get("background")
-    if not remove and bg:
-        removebg = False
+    if keep and bg:
+        keepbg = True
 
         bgtype = bg.get("type")
         if not bgtype or (bgtype != "SHAPE" and bgtype != "PICTURE"):
             print("Error: invalid background type. Can only be \"PICTURE\" or \"SHAPE\".")
-            removebg = True
+            keepbg = False
         else:
-            removebg = testComponent(bg)
-        if removebg:
+            if (bgtype == "SHAPE"):
+                keepbg = testShape(bg)
+            else:
+                keepbg = testPicture(bg)
+        if not keepbg:
             schema.pop('background')
         print("background removed.")
 
@@ -158,41 +110,43 @@ def testShape(schema):
     #for Line or Antialiased Line expect startpos,endpos
     #for Lines or Antialiased Lines expect coordlist,closed
 
-    remove = False
+    keep = True
 
     subtype = schema.get("subtype")
 
     if not schema.get("x") or not schema.get("y") or not subtype:
         print("Error: missing data detected in text component."
               "Expecting \"x\",\"y\",\"subtype\" attributes.")
-        remove = True
+        keep = False
     elif schema.get("action"):
-        remove = testAction(schema)
+        keep = testAction(schema)
 
-    if not remove and subtype:
+    if keep and subtype:
         if subtype is 'RECTANGLE' or subtype is 'ELLIPSE':
             if not schema.get("width") or not schema.get("height"):
                 print("Error: missing data for %s. Expecting \"width\",\"height\"." % subtype.lower())
-                remove = True
+                keep = False
         elif subtype is 'POLYGON':
             if not schema.get("coordlist"):
                 print("Error: missing data for %s. Expecting \"coordlist\"." % subtype.lower())
-                remove = True
+                keep = False
         elif subtype is 'CIRCLE':
             if not schema.get("radius"):
                 print("Error: missing data for %s. Expecting \"radius\"." % subtype.lower())
-                remove = True
+                keep = False
         elif subtype is 'ARC':
             if not schema.get("width") or not schema.get("height") or not schema.get("startangle") or not schema.get("endangle"):
                 print("Error: missing data for %s. Expecting \"width\",\"height\",\"startangle\",\"endangle\"." % subtype.lower())
-                remove = True
+                keep = False
         elif subtype is 'LINE' or subtype is 'AALINE':
             if not schema.get("startpos") or not schema.get("endpos"):
                 print("Error: missing data for %s. Expecting \"startpos\",\"endpos\"." % subtype.lower())
-                remove = True
+                keep = False
         elif subtype is 'LINES' or subtype is 'AALINES':
             if not schema.get("coordlist") or not schema.get("closed"):
                 print("Error: missing data for %s. Expecting \"coordlist\",\"closed\"." % subtype.lower())
-                remove = True
+                keep = False
 
-    return remove
+    return keep
+
+#TODO console && description

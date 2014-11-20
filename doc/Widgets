@@ -1,0 +1,199 @@
+
+This document contains all you need to know to create a widget for a graphical interface.
+
+----------------
+What's a widget?
+----------------
+
+A widget is an object that will be displayed.
+It can be a picture, some text,a shape or even another interface used as decorator or subframe.
+Each of these subcategories have their own specific attributes.
+Each widget definition is simply a dictionary of attributes in the schema json file.
+
+The following sections describes all the required attributes for each type of widgets.
+Attributes with a * before their names are mandatory.
+Each file path reference used in the following description are relative to the current schema file.
+Kerogen will work without the file extension, providing it will cause an error when loading the interface.
+
+-----------------
+Common Attributes
+-----------------
+
+There is one attribute that is used by every widget categories. That attribute is:
+
+*type           The type of widget you want to define. It can be set to TEXT,SHAPE,PICTURE,DECORATOR or SUB.
+
+Some attributes are common for picture, text and shape widgets.
+Here's a list and explanation of all thoses attributes:
+
+name            Allows you to set a name for the widget.
+*x              Defines the widget topleft x value.
+*y              Defines the widget topleft y value.
+width           Defines the width of the widget. Mandatory for text components as well as some specific shapes.
+height          Defines the height of the widget. Mandatory for text components as well as some specific shapes.
+
+alpha           Set the widget transparency (default: no transparency).
+tooltip         Set the widget tooltip. If you set it, its text will be displayed when the mouse is on it.
+
+hide            If you don't want you widget to be displayed directly, you can use that switch (default : false).
+
+minw
+minh
+next
+followers
+ratio
+
+action          Set the desired actions for a widget. It can be set to KEYDOWN,KEYUP,MOUSEDOWN,MOUSEUP or MOUSEMOVE.
+function        Set the associated function for that action. Mandatory if action is set.
+data            The parameters to give to the function.
+restriction     Set some specific parameter for that action to execute (e.g. mouse clicking action only applies for left click).
+
+The last 3 attributes are to be set only if action is.
+
+KEYDOWN,MOUSEMOVE and MOUSEDOWN are not available without the proper certification to prevent wrongdoers from doing anything stupid. You will rarely need these anyway.
+
+To set the action you need to create a list []. One action means a size 1 list.
+Each action correspond to a function so if you had a list of 10 actions, you will have a list of 10 functions.
+Those functions can either be within a list of default functions or your own set in the corresponding python file.
+The default functions are RUNSCREEN,CLOSE,LAUNCH,MOVE,ANCHOR and RESIZE. Those wil be explained a tad later.
+
+As mentioned, you can set the parameters to pass to a function. If you don't require any data, you can leave it blank or set it to null
+Restriction work the same way as data.
+
+Default functions require specific data to work. Here's a list of each functions and their data
+
+RUNSCREEN       Run another screen within the same interface - schema file,interface file.
+                Requires the schema file.
+                interface file is optional. If not set, Kerogen will assume that it has the same name and path as the schema file.
+CLOSE           Close the interface - null.
+LAUNCH          Run a new interface - schema file,interface file. See RUNSCREEN for information on the files.
+ANCHOR          Make the interface follow the mouse - none.
+RESIZE          Resize the interface - HORIZONTAL,VERTICAL or DIAGONAL.
+MINIMIZE        minimize the interface - none.
+MAXIMIZE        maximize the interface - none.
+RESTORE         restore the interface to previous size after max/minimizing - none.
+
+Now, there's still the properties of each type of widget to describe.
+
+----
+Text
+----
+
+A text widget obviously display text. as mentionned earlier, you have to set the width and the height of a text component.
+Think of it as a textbox. Make sure there is enough space to render the text otherwise it will return an error upon display.
+Text widgets are transparent per default.
+
+here's the attributes for that widget:
+
+text            The initial text that will appear (default: empty string).
+size            The font size (default : set in options).
+typeface        The typeface you'll use (default: set in options).
+center          Should the text be centered ? (default: true).
+r,g,b           The text color (default : set in options).
+
+editable        Should the textbox be editable ? (default: false).
+clear           Should the text be cleared when editing ? (default: true).
+
+title           Set the widget as the title widget. Used by decorators to find where to place the interface title.
+
+-------
+Picture
+-------
+
+A picture widget is used to display images.
+If you want to control the width,height of the picture, you only have to set those attributes.
+
+file            The name of the file you want to load from (default: set in options).
+
+icon            Set the widget as the icon widget. Used by decorators to find where to place the interface icon.
+
+you can only load image formatted as jpg,png,gif,bmp,pcx,tga,tif,lbm,pbm,pgm,ppm and xpm.
+
+-----
+Shape
+-----
+
+A shape widget is used to draw a shape.
+
+*subtype        The shape type.
+r,g,b           The shape color. (default: set in options)
+
+gradient        The gradients angle. Null value means no gradient (default: Null)
+ecr,ecg,ecb     The final color for the gradient. Only applies if you set the gradient (default: set in options)
+
+renderarea      Used by decorators to find where to place the interface. The interface will replace the widget.
+
+Each shape type has its own attribute requirements. Here's a list of the available shapes and the data to be set:
+
+RECTANGLE & ELLIPSE
+    *Width,height
+    thickness       Set the thickness of the shape border. 0 means filling the shape. (default: 0)
+POLYGON
+    thickness
+    *coordlist      The coordinates of the edges of the shape
+CIRCLE
+    thickness
+    *radius         The circle radius
+ARC
+    thickness
+    *Width,height
+    *startangle     The starting angle for the arc
+    *endangle       The ending angle for the arc
+LINE
+    thickness
+    *startpos       The starting coordinates
+    *endpos         The ending coordinates
+AALINE
+    blend           If true,the shades will be be blended with existing pixel shades instead of overwriting them (default: false)
+    *startpos
+    *endpos
+LINES
+    thickness
+    *coordlist
+    *closed         If the closed argument is true an additional line segment is drawn between the first and last points
+AALINES
+    blend
+    *coordlist
+    *closed
+
+---------
+DECORATOR
+---------
+
+A decorator is a widget that will be put around the current interface.
+If you want to create a decorator, you will have to set the render area for one of the shape.
+You can optionally set the icon and title for other widgets.
+
+To set the used decorator for the current interface you need the following attributes:
+
+*schema             The decorator schema file.
+interface           Python interface file.
+title               The title to be set.
+icon                The icon to be set.
+
+---
+SUB
+---
+
+sub widget is the widget to add an another interface.
+
+To set the interface you desire you need the following attributes:
+
+*schema             The schema file.
+interface           Python interface file.
+*x                  The x position of the interface relatively to the current one.
+*y                  The y position of the interface relatively to the current one.
+width               The new width of the sub-interface.
+height              The new height of the sub-interface.
+
+-----
+GROUP
+-----
+
+group widget is a special widget used for resizing in some case. To see its use, check the resize file
+
+Its attributes are as follow:
+
+*xgroup             Is it grouping on x or y ?
+*widgets            List of selected widgets.
+ratio               Ratio for the resize
